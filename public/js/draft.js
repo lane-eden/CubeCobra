@@ -90,6 +90,11 @@ function botPicks() {
       }
       return 0;
     });
+
+    if (!draft.picks[i][0]) {
+      draft.picks[i][0] = [];
+    }
+
     shuffle(unratedpicks);
     var picknums = ratedpicks.concat(unratedpicks);
     //try to take card that contains exactly <= our colors
@@ -100,7 +105,7 @@ function botPicks() {
           if ((colors.length == 1 && colors.includes(bot[0])) ||
             colors.length == 0) {
             pick = draft.packs[i][0].splice(picknums[j], 1);
-            draft.picks[i].push(pick[0].cardID);
+            draft.picks[i][0].push(pick[0]);
             taken = true;
           }
         } else {
@@ -108,7 +113,7 @@ function botPicks() {
             (colors.length == 1 && (colors.includes(bot[0]) || colors.includes(bot[1]))) ||
             colors.length == 0) {
             pick = draft.packs[i][0].splice(picknums[j], 1);
-            draft.picks[i].push(pick[0].cardID);
+            draft.picks[i][0].push(pick[0]);
             taken = true;
           }
         }
@@ -120,7 +125,7 @@ function botPicks() {
         var colors = draft.packs[i][0][picknums[j]].colors;
         if (colors.includes(bot[0]) || colors.includes(bot[1])) {
           pick = draft.packs[i][0].splice(picknums[j], 1);
-          draft.picks[i].push(pick[0].cardID);
+          draft.picks[i][0].push(pick[0]);
           taken = true;
         }
       }
@@ -128,7 +133,7 @@ function botPicks() {
     //take a random card
     if (!taken) {
       pick = draft.packs[i][0].splice(Math.floor(Math.random() * draft.packs[i][0].length), 1);
-      draft.picks[i].push(pick[0].cardID);
+      draft.picks[i][0].push(pick[0]);
     }
   }
 }

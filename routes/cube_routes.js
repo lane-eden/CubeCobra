@@ -1569,13 +1569,14 @@ router.get('/draft/:id', function(req, res) {
           });
         });
       });
-      // TODO this only handles the user picks (item 0 of draft picks), so custom images won't work with bot picks.
-      draft.picks[0].forEach(function(col, index) {
-        col.forEach(function(card, index) {
-          card.details = carddb.cardFromId(card.cardID);
-          card.details.display_image = util.getCardImageURL(card);
-        });
-      });
+      for (let seat of draft.picks) {
+        for (let col of seat) {
+          for (let card of col) {
+            card.details = carddb.cardFromId(card.cardID);
+            card.details.display_image = util.getCardImageURL(card);
+          }
+        }
+      }
       draftutil.getCardRatings(names, CardRating, function(ratings) {
         draft.ratings = ratings;
         Cube.findOne(build_id_query(draft.cube), function(err, cube) {
@@ -2253,93 +2254,49 @@ router.get('/deck/:id', function(req, res) {
               }
               var player_deck = [];
               var bot_decks = [];
-              if (typeof deck.cards[deck.cards.length - 1][0] === 'object') {
-                //old format
-                deck.cards[0].forEach(function(card, index) {
-                  card.details = carddb.cardFromId(card);
+
+              for (let col of deck.playerdeck) {
+                for (let card of col) {
                   card.details.display_image = util.getCardImageURL(card);
-                  player_deck.push(card.details);
-                });
-                for (i = 1; i < deck.cards.length; i++) {
-                  var bot_deck = [];
-                  deck.cards[i].forEach(function(card, index) {
-                    if (!card[0].cardID && !carddb.cardFromId(card[0].cardID).error) {
-                      console.log(req.params.id + ": Could not find seat " + (bot_decks.length + 1) + ", pick " + (bot_deck.length + 1));
-                    } else {
-                      var details = carddb.cardFromId(card[0].cardID);
-                      details.display_image = util.getCardImageURL({details});
-                      bot_deck.push(details);
-                    }
-                  });
-                  bot_decks.push(bot_deck);
                 }
-                var bot_names = [];
-                for (i = 0; i < deck.bots.length; i++) {
-                  bot_names.push("Seat " + (i + 2) + ": " + deck.bots[i][0] + ", " + deck.bots[i][1]);
-                }
-                return res.render('cube/cube_deck', {
-                  oldformat: true,
-                  cube: cube,
-                  cube_id: get_cube_id(cube),
-                  owner: owner_name,
-                  activeLink: 'playtest',
-                  drafter: drafter_name,
-                  cards: player_deck,
-                  bot_decks: bot_decks,
-                  bots: bot_names,
-                  metadata: generateMeta(
-                    `Cube Cobra Deck: ${cube.name}`,
-                    (cube.type) ? `${cube.card_count} Card ${cube.type} Cube` : `${cube.card_count} Card Cube`,
-                    cube.image_uri,
-                    `https://cubecobra.com/cube/deck/${req.params.id}`
-                  ),
-                  loginCallback: '/cube/deck/' + req.params.id
-                });
-              } else {
-                deck.playerdeck.forEach(function(col, ind)
-                {
-                  col.forEach(function(card, index)
-                  {
-                    card.details.display_image = util.getCardImageURL(card);
-                  });
-                });
-                //new format
-                for (i = 0; i < deck.cards.length; i++) {
-                  var bot_deck = [];
-                  deck.cards[i].forEach(function(cardid, index) {
-                    if (carddb.cardFromId(cardid).error) {
-                      console.log(req.params.id + ": Could not find seat " + (bot_decks.length + 1) + ", pick " + (bot_deck.length + 1));
-                    } else {
-                      var details = carddb.cardFromId(cardid);
-                      details.display_image = util.getCardImageURL({details});
-                      bot_deck.push(details);
-                    }
-                  });
-                  bot_decks.push(bot_deck);
-                }
-                var bot_names = [];
-                for (i = 0; i < deck.bots.length; i++) {
-                  bot_names.push("Seat " + (i + 2) + ": " + deck.bots[i][0] + ", " + deck.bots[i][1]);
-                }
-                return res.render('cube/cube_deck', {
-                  oldformat: false,
-                  cube: cube,
-                  cube_id: get_cube_id(cube),
-                  owner: owner_name,
-                  activeLink: 'playtest',
-                  drafter: drafter_name,
-                  deck: JSON.stringify(deck.playerdeck),
-                  bot_decks: bot_decks,
-                  bots: bot_names,
-                  metadata: generateMeta(
-                    `Cube Cobra Deck: ${cube.name}`,
-                    (cube.type) ? `${cube.card_count} Card ${cube.type} Cube` : `${cube.card_count} Card Cube`,
-                    cube.image_uri,
-                    `https://cubecobra.com/cube/deck/${req.params.id}`
-                  ),
-                  loginCallback: '/cube/deck/' + req.params.id
-                });
               }
+              for (let seat of deck.cards) {
+                var bot_deck = [];
+                for (let col of seat) {
+                  for (let card of col) {
+                    if (carddb.cardFromId(card.cardID).error) {
+                      console.log(req.params.id + ": Could not find seat " + (bot_decks.length + 1) + ", pick " + (bot_deck.length + 1));
+                    } else {
+                      var details = carddb.cardFromId(card.cardID);
+                      details.display_image = util.getCardImageURL({details});
+                      bot_deck.push(details);
+                    }
+                  }
+                }
+                bot_decks.push(bot_deck);
+              }
+              var bot_names = [];
+              for (i = 0; i < deck.bots.length; i++) {
+                bot_names.push("Seat " + (i + 2) + ": " + deck.bots[i][0] + ", " + deck.bots[i][1]);
+              }
+              return res.render('cube/cube_deck', {
+                oldformat: false,
+                cube: cube,
+                cube_id: get_cube_id(cube),
+                owner: owner_name,
+                activeLink: 'playtest',
+                drafter: drafter_name,
+                deck: JSON.stringify(deck.playerdeck),
+                bot_decks: bot_decks,
+                bots: bot_names,
+                metadata: generateMeta(
+                  `Cube Cobra Deck: ${cube.name}`,
+                  (cube.type) ? `${cube.card_count} Card ${cube.type} Cube` : `${cube.card_count} Card Cube`,
+                  cube.image_uri,
+                  `https://cubecobra.com/cube/deck/${req.params.id}`
+                ),
+                loginCallback: '/cube/deck/' + req.params.id
+              });
             });
           });
         }
