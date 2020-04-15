@@ -83,6 +83,15 @@ export function GetColorCategoryHybridInclusive(type, colors, parsedCost) {
   let res = [GetColorCategory(type, colors)];
 
   if (parsedCost.some((symbol) => symbol.includes('-') && !symbol.includes('-p'))) {
+    if (
+      // If this is a true hybrid card (not 2-brid for example) put it in the Hybrid column instead of Multicolor.
+      parsedCost
+        .filter((symbol) => symbol.includes('-'))
+        .every((symbol) => symbol.split('-').every((c) => [...'wubrg'].includes(c)))
+    ) {
+      res = ['Hybrid'];
+    }
+    
     let validColors = ['w', 'u', 'b', 'r', 'g'];
     for (const symbol of parsedCost) {
       if (symbol.includes('-')) {
@@ -156,7 +165,7 @@ const ALL_CMCS = Array.from(Array(33).keys())
 
 function getLabelsRaw(cube, sort) {
   if (sort == 'Color Category' || sort == 'Color Category (Hybrid Inclusive)') {
-    return ['White', 'Blue', 'Black', 'Red', 'Green', 'Multicolored', 'Colorless', 'Lands'];
+    return ['White', 'Blue', 'Black', 'Red', 'Green', 'Hybrid', 'Multicolored', 'Colorless', 'Lands'];
   }
   if (sort == 'Color Identity') {
     return ['White', 'Blue', 'Black', 'Red', 'Green', 'Multicolored', 'Colorless'];
